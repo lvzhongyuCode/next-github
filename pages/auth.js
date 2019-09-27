@@ -1,0 +1,1 @@
+export default () => <span>sdada</span>
