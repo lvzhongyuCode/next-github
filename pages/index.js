@@ -6,6 +6,7 @@ import Router, { withRouter } from 'next/router'
 import Repo from '../components/Repo'
 import LRU from 'lru-cache'
 import { cacheArray } from '../lib/repo-basic-cache'
+import { getHtmlUrl, getUserInfo, getStarredByUser, getReposByUsers, computeSimilar } from '../lib/tools'
 
 const cache = new LRU({
   maxAge: 1000 * 60 * 10
@@ -15,8 +16,8 @@ const { publicRuntimeConfig } = getConfig()
 let cachedUserRepos, cachedUserStaredRepos
 
 const isServer = typeof window === 'undefined'
-function Index({userRepos, userStaredRepos, user, router}){
-  
+function Index({ userRepos, userStaredRepos, userRecommendRepos, user, router }) {
+
   const tabKey = router.query.key || '1'
   const handleTabChange = (activeKey) => {
     Router.push(`/?key=${activeKey}`)
@@ -31,6 +32,9 @@ function Index({userRepos, userStaredRepos, user, router}){
       if (userStaredRepos) {
         cache.set('userStaredRepos', userStaredRepos)
       }
+      if (userRecommendRepos) {
+        cache.set('userRecommendRepos', userRecommendRepos)
+      }
     }
   }, [userRepos, userStaredRepos])
 
@@ -38,6 +42,9 @@ function Index({userRepos, userStaredRepos, user, router}){
     if (!isServer) {
       cacheArray(userRepos)
       cacheArray(userStaredRepos)
+      // console.log((userStaredRepos))
+      // console.log(getUserInfo(userStaredRepos))
+      // console.log(alo7)
     }
   })
   if (!user || !user.id) {
@@ -62,29 +69,36 @@ function Index({userRepos, userStaredRepos, user, router}){
   return (
     <div className={'root'}>
       <div className={'user-info'}>
-        <img src={user.avatar_url} alt={'user avatar'} className={'avatar'}/>
+        <img src={user.avatar_url} alt={'user avatar'} className={'avatar'} />
         <span className={'login'}>{user.login}</span>
         <span className={'name'}>{user.name}</span>
         <span className={'bio'}>{user.bio || 'do better!'}</span>
         <p className={'email'}>
-          <Icon type={'mail'} style={{marginRight: 10}} />
+          <Icon type={'mail'} style={{ marginRight: 10 }} />
           <a href={`mailto:${user.email}`}>{user.email || 'm139494110607@163.com'}</a>
         </p>
       </div>
       <div className={'user-repos'}>
-       
+
         <Tabs activeKey={tabKey} onChange={handleTabChange} animated={false}>
           <Tabs.TabPane tab="你的仓库" key={'1'}>
             {
               userRepos.map(repo => {
-                return <Repo repo={repo} key={repo.id}/>
+                return <Repo repo={repo} key={repo.id} />
               })
             }
           </Tabs.TabPane>
           <Tabs.TabPane tab="你关注的仓库" key={'2'}>
             {
               userStaredRepos.map(repo => {
-                return <Repo repo={repo} key={repo.id}/>
+                return <Repo repo={repo} key={repo.id} />
+              })
+            }
+          </Tabs.TabPane>
+          <Tabs.TabPane tab="推荐" key={'3'}>
+            {
+              userRecommendRepos.map(repo => {
+                return <Repo repo={repo} key={repo.id} />
               })
             }
           </Tabs.TabPane>
@@ -128,7 +142,7 @@ function Index({userRepos, userStaredRepos, user, router}){
   )
 }
 
-Index.getInitialProps = async ({ctx, reduxStore}) => {
+Index.getInitialProps = async ({ ctx, reduxStore }) => {
   const user = reduxStore.getState().user
   if (!user || !user.id) {
     return {
@@ -136,29 +150,43 @@ Index.getInitialProps = async ({ctx, reduxStore}) => {
     }
   }
   if (!isServer) {
-    if (cache.get('userRepos') && cache.get('userStaredRepos')) {
+    if (cache.get('userRepos') && cache.get('userStaredRepos') && cache.get('userRecommendRepos')) {
       return {
         userRepos: cache.get('userRepos'),
         userStaredRepos: cache.get('userStaredRepos'),
+        userRecommendRepos: cache.get('userRecommendRepos'),
         isLogin: true
       }
     }
   }
-  
 
+  // 用户的项目列表
   const userRepos = await api.request({
     url: '/user/repos'
   }, ctx.req, ctx.res)
 
+  // 用户的星标列表
   const userStaredRepos = await api.request({
     url: '/user/starred',
   }, ctx.req, ctx.res)
 
-  
+  // 用户列表
+  const userList = getUserInfo(userStaredRepos.data)
+  // 所有星标项目
+  const totalStaredRepos = await getReposByUsers(userList, ctx)
+  // 获取与自己最接近的用户
+  console.log(user.login)
+  const similarUserName = computeSimilar(totalStaredRepos, user.login, userStaredRepos)
+  // 用户的推荐列表
+  const userRecommendRepos = await api.request({
+    url: `/users/${similarUserName}/starred`,
+  }, ctx.req, ctx.res)
+
 
   return {
     userRepos: userRepos.data,
     userStaredRepos: userStaredRepos.data,
+    userRecommendRepos: userRecommendRepos.data,
     isLogin: true
   }
 

@@ -23,7 +23,7 @@ module.exports = server => {
         ctx.url.replace('/github/', '/'),
         ctx.request.body || {},
         headers)
-      
+
       ctx.status = result.status
       ctx.body = result.data
     } else {

@@ -2,10 +2,10 @@ import { useState, useCallback } from 'react'
 import getConfig from 'next/config'
 import { connect } from 'react-redux'
 import axios from 'axios'
-import {withRouter, Router} from 'next/router'
+import { withRouter, Router } from 'next/router'
 import { Icon, Layout, Input, Avatar, Tooltip, Dropdown, Menu } from 'antd'
 import Container from './Container'
-import {logout} from '../store/store'
+import { logout } from '../store/store'
 import Link from 'next/link'
 const { publicRuntimeConfig } = getConfig()
 
@@ -17,12 +17,12 @@ const githubIconStyle = {
   paddingTop: 10,
   marginRight: 20
 }
-const footerStyle= {
+const footerStyle = {
   textAlign: 'center'
 }
 
 
-function MyLayout({ children, user, logout, router }){
+function MyLayout({ children, user, logout, router }) {
   const urlQuery = router.query && router.query.query
   const [search, setSearch] = useState(urlQuery || '')
   const handleSearchChange = useCallback((event) => {
@@ -31,7 +31,7 @@ function MyLayout({ children, user, logout, router }){
   const userDropDown = (
     <Menu>
       <Menu.Item>
-        <a onClick={() => {handleLogOut()}}>
+        <a onClick={() => { handleLogOut() }}>
           登 出
         </a>
       </Menu.Item>
@@ -47,7 +47,7 @@ function MyLayout({ children, user, logout, router }){
   const handleGotoOAuth = useCallback((e) => {
     e.preventDefault()
     axios.get(`/prepare-auth?url=${router.asPath}`)
-      .then(resp => { 
+      .then(resp => {
         if (resp.status === 200) {
           location.href = publicRuntimeConfig.OAUTH_URL
         } else {
@@ -57,23 +57,23 @@ function MyLayout({ children, user, logout, router }){
       .catch(err => {
         console.log('prepare auth fail')
       })
-  }, []) 
+  }, [])
   return <Layout>
     <Header>
       <Container renderer={<div className={'header-inner'} />}>
         <div className={'header-left'}>
           <div className={'logo'}>
             <Link href={'/'}>
-              <Icon type={'github'} style={githubIconStyle}/>
+              <Icon type={'github'} style={githubIconStyle} />
             </Link>
           </div>
           <div>
-            <Input.Search 
-              placeholder={'搜索仓库'} 
-              value={search} 
+            <Input.Search
+              placeholder={'搜索仓库'}
+              value={search}
               onChange={handleSearchChange}
               onSearch={handleOnSearch}
-              />
+            />
           </div>
         </div>
         <div className={'header-right'}>
@@ -82,28 +82,28 @@ function MyLayout({ children, user, logout, router }){
               user && user.id ? (
                 <Dropdown overlay={userDropDown}>
                   <a href="/">
-                    <Avatar size={40} src={user.avatar_url}/>
+                    <Avatar size={40} src={user.avatar_url} />
                   </a>
                 </Dropdown>
-              ) : 
-              <Tooltip placement={'bottom'} title={'点击进行登录'}>
-                <a href={`/prepare-auth?url=${router.asPath}`}>
-                  <Avatar size={40} icon={'user'}/>
-                </a>
-              </Tooltip>
+              ) :
+                <Tooltip placement={'bottom'} title={'点击进行登录'}>
+                  <a href={`/prepare-auth?url=${router.asPath}`}>
+                    <Avatar size={40} icon={'user'} />
+                  </a>
+                </Tooltip>
             }
-           
+
           </div>
         </div>
       </Container>
     </Header>
     <Content>
       <Container>
-        { children }
+        {children}
       </Container>
     </Content>
     <Footer style={footerStyle}>
-      Develop by lotatall
+      Develop by jmy
     </Footer>
     <style jsx>{`
       .header-inner{
@@ -137,7 +137,7 @@ function MyLayout({ children, user, logout, router }){
 }
 export default connect((state) => ({
   user: state.user
-}),(dispatch) => {
+}), (dispatch) => {
   return {
     logout: () => dispatch(logout())
   }
