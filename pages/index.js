@@ -174,8 +174,8 @@ Index.getInitialProps = async ({ ctx, reduxStore }) => {
   const userList = getUserInfo(userStaredRepos.data)
   // 所有星标项目
   const totalStaredRepos = await getReposByUsers(userList, ctx)
+  console.log('所有星标项目是' + totalStaredRepos)
   // 获取与自己最接近的用户
-  console.log(user.login)
   const similarUserName = computeSimilar(totalStaredRepos, user.login, userStaredRepos)
   // 用户的推荐列表
   const userRecommendRepos = await api.request({
